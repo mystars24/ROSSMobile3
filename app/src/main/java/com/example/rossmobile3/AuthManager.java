@@ -4,6 +4,7 @@ import android.content.Context;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -28,6 +29,7 @@ public class AuthManager {
         this.context = context;
     }
 
+    // ✅ Register User with OTP
     public void registerUser(String email, AuthCallback callback) {
         auth.createUserWithEmailAndPassword(email, "TemporaryPass123")
                 .addOnCompleteListener(task -> {
@@ -36,7 +38,28 @@ public class AuthManager {
                         saveOTPToFirebase(email, otp);  // Save OTP to Firebase
                         sendOTPEmail(email, otp, callback);
                     } else {
-                        callback.onFailure("Registration failed.");
+                        if (task.getException() instanceof FirebaseAuthUserCollisionException) {
+                            callback.onFailure("Email is already registered. Please use another email.");
+                        } else {
+                            callback.onFailure("Registration failed. " + task.getException().getMessage());
+                        }
+                    }
+                });
+    }
+
+    // ✅ Login User
+    public void loginUser(String email, String password, AuthCallback callback) {
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            callback.onSuccess("Login successful.");
+                        } else {
+                            callback.onFailure("User not found.");
+                        }
+                    } else {
+                        callback.onFailure("Login failed: " + task.getException().getMessage());
                     }
                 });
     }
@@ -97,7 +120,7 @@ public class AuthManager {
                             user.updatePassword(newPassword)
                                     .addOnCompleteListener(passwordTask -> {
                                         if (passwordTask.isSuccessful()) {
-                                            callback.onSuccess("Password verified successfully.");
+                                            callback.onSuccess("Password updated successfully.");
                                         } else {
                                             callback.onFailure("Failed to update password.");
                                         }
@@ -110,7 +133,7 @@ public class AuthManager {
     }
 
     public interface AuthCallback {
-        void onSuccess(String message); // ✅ Make sure success includes a message
+        void onSuccess(String message);
         void onFailure(String errorMessage);
     }
 }

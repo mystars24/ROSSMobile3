@@ -6,10 +6,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/bg"
-    tools:context=".RegisterOTP">
+    tools:context=".ForgotOTP">
 
     <TextView
-        android:id="@+id/OTPText"
+        android:id="@+id/forgotOTPText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="One Time Passcode"
@@ -26,7 +26,7 @@
         android:id="@+id/textView"
         android:layout_width="300dp"
         android:layout_height="40dp"
-        android:text="Enter One-time Passcode sent to your Email"
+        android:text="Check Email for OTP to Verify your Email"
         android:textColor="@color/white"
         android:textSize="15dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -34,10 +34,10 @@
         app:layout_constraintHorizontal_bias="0.351"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.301" />
+        app:layout_constraintVertical_bias="0.298" />
 
     <EditText
-        android:id="@+id/newOTP"
+        android:id="@+id/forgotOTP"
         android:layout_width="300dp"
         android:layout_height="30dp"
         android:background="@null"
@@ -65,16 +65,16 @@
         app:srcCompat="@drawable/rectangle" />
 
     <Button
-        android:id="@+id/regOTPBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Register"
+        android:id="@+id/signupBtn"
+        android:layout_width="160dp"
+        android:layout_height="40dp"
         android:backgroundTint="@color/btncolor"
+        android:text="Reset Password"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.125"
+        app:layout_constraintHorizontal_bias="0.143"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.499" />
+        app:layout_constraintVertical_bias="0.472" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
