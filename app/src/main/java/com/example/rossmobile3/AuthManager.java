@@ -54,7 +54,7 @@ public class AuthManager {
 
     private String generateOTP() {
         Random random = new Random();
-        return String.valueOf(100000 + random.nextInt(900000)); // Generate 6-digit OTP
+        return String.valueOf(100000 + random.nextInt(999999)); // Generate 6-digit OTP
     }
 
     public void sendOTPEmail(String recipientEmail, String otp, AuthCallback callback) {

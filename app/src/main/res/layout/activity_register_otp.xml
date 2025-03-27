@@ -42,6 +42,8 @@
         android:layout_height="30dp"
         android:background="@null"
         android:ems="10"
+        android:textColor="@color/white"
+        android:textSize="20dp"
         android:inputType="number"
         app:layout_constraintBottom_toBottomOf="@+id/imageView3"
         app:layout_constraintEnd_toEndOf="@+id/imageView3"
