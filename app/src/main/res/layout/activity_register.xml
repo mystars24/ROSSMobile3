@@ -35,7 +35,7 @@
         app:srcCompat="@drawable/rectangle" />
 
     <EditText
-        android:id="@+id/editTextTextEmailAddress"
+        android:id="@+id/newEmail"
         android:layout_width="280dp"
         android:layout_height="35dp"
         android:background="@null"

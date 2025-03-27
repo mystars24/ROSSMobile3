@@ -30,6 +30,15 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    android {
+        packagingOptions {
+            resources.excludes.add("META-INF/NOTICE.md")
+            resources.excludes.add("META-INF/LICENSE.md")
+            resources.excludes.add("META-INF/DEPENDENCIES")
+            resources.excludes.add("META-INF/NOTICE")
+            resources.excludes.add("META-INF/LICENSE")
+        }
+    }
 }
 
 dependencies {
@@ -46,4 +55,5 @@ dependencies {
     implementation("com.google.firebase:firebase-auth:21.1.0")
     implementation("com.google.firebase:firebase-firestore:24.9.1")
     implementation("com.google.firebase:firebase-database:20.2.2")
+    implementation("com.sun.mail:android-mail:1.6.7")
 }
