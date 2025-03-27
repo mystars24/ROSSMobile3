@@ -24,20 +24,20 @@
 
     <TextView
         android:id="@+id/textView"
-        android:layout_width="300dp"
-        android:layout_height="40dp"
-        android:text="Check Email for OTP to Verify your Email"
+        android:layout_width="359dp"
+        android:layout_height="30dp"
+        android:text="Check Email for OTP to Verify and reset your Email"
         android:textColor="@color/white"
         android:textSize="15dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.351"
+        app:layout_constraintHorizontal_bias="0.75"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.298" />
+        app:layout_constraintVertical_bias="0.282" />
 
     <EditText
-        android:id="@+id/forgotOTP"
+        android:id="@+id/forgotOTPcode"
         android:layout_width="300dp"
         android:layout_height="30dp"
         android:background="@null"
@@ -65,7 +65,7 @@
         app:srcCompat="@drawable/rectangle" />
 
     <Button
-        android:id="@+id/signupBtn"
+        android:id="@+id/resetPasswordBtn"
         android:layout_width="160dp"
         android:layout_height="40dp"
         android:backgroundTint="@color/btncolor"

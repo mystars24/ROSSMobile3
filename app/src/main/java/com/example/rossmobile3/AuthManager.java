@@ -132,6 +132,12 @@ public class AuthManager {
                 });
     }
 
+    public void sendForgotPasswordOTP(String email, AuthCallback callback) {
+        String otp = generateOTP();
+        saveOTPToFirebase(email, otp);
+        sendOTPEmail(email, otp, callback);
+    }
+
     public interface AuthCallback {
         void onSuccess(String message);
         void onFailure(String errorMessage);
