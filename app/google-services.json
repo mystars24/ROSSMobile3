@@ -1,0 +1,127 @@
+{
+  "project_info": {
+    "project_number": "109576062157",
+    "firebase_url": "https://rosstest-e1952-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "rosstest-e1952",
+    "storage_bucket": "rosstest-e1952.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109576062157:android:e20ca0cbbbeaa84bfb9584",
+        "android_client_info": {
+          "package_name": "com.example.rossmobile"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSp2fu6h7o04MD8qap9QR2GLgjLrOdOeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109576062157:android:32657107c15cc24efb9584",
+        "android_client_info": {
+          "package_name": "com.example.rossmobile3"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSp2fu6h7o04MD8qap9QR2GLgjLrOdOeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109576062157:android:212fa8192b98d18bfb9584",
+        "android_client_info": {
+          "package_name": "com.example.rosstar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSp2fu6h7o04MD8qap9QR2GLgjLrOdOeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:109576062157:android:cdf9d2b10e19a331fb9584",
+        "android_client_info": {
+          "package_name": "com.example.rosstest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSp2fu6h7o04MD8qap9QR2GLgjLrOdOeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "109576062157-mc71t16qc17iaid5pgfis61g3admhcfi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
