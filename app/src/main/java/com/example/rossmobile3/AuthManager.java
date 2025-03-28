@@ -34,8 +34,14 @@ public class AuthManager {
         auth.createUserWithEmailAndPassword(email, "TemporaryPass123")
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
+                        FirebaseUser user = auth.getCurrentUser();
+                        if (user != null) {
+                            String userId = user.getUid();
+                            saveUserToFirestore(userId, email); // Save email to Firestore
+                        }
+
                         String otp = generateOTP();
-                        saveOTPToFirebase(email, otp);  // Save OTP to Firebase
+                        saveOTPToFirebase(email, otp); // Save OTP to Firestore
                         sendOTPEmail(email, otp, callback);
                     } else {
                         if (task.getException() instanceof FirebaseAuthUserCollisionException) {
@@ -46,6 +52,17 @@ public class AuthManager {
                     }
                 });
     }
+
+    private void saveUserToFirestore(String userId, String email) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("email", email);
+
+        db.collection("users").document(userId)
+                .set(userData)
+                .addOnSuccessListener(aVoid -> Toast.makeText(context, "User registered successfully!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(context, "Failed to save user: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
 
     // ✅ Login User
     public void loginUser(String email, String password, AuthCallback callback) {
@@ -120,6 +137,7 @@ public class AuthManager {
                             user.updatePassword(newPassword)
                                     .addOnCompleteListener(passwordTask -> {
                                         if (passwordTask.isSuccessful()) {
+                                            updatePasswordStatusInFirestore(user.getUid(), email); // Store email in Firestore
                                             callback.onSuccess("Password updated successfully.");
                                         } else {
                                             callback.onFailure("Failed to update password.");
@@ -130,6 +148,17 @@ public class AuthManager {
                         callback.onFailure("Authentication failed.");
                     }
                 });
+    }
+
+    private void updatePasswordStatusInFirestore(String userId, String email) {
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("email", email);
+        userData.put("passwordSet", true);
+
+        db.collection("users").document(userId)
+                .set(userData) // This ensures the email is stored along with passwordSet status
+                .addOnSuccessListener(aVoid -> Toast.makeText(context, "Password setup completed!", Toast.LENGTH_SHORT).show())
+                .addOnFailureListener(e -> Toast.makeText(context, "Failed to update Firestore: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
     public void sendForgotPasswordOTP(String email, AuthCallback callback) {
