@@ -1,7 +1,11 @@
 package com.example.rossmobile3;
 
 import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
@@ -20,6 +24,7 @@ public class AuthManager {
     private FirebaseAuth auth;
     private FirebaseFirestore db;
     private Context context;
+    private FirebaseAuth mAuth;
     private static final String SENDER_EMAIL = "rosstars2425@gmail.com";  // Your email
     private static final String SENDER_PASSWORD = "sfwh wvlr evnj jjii";  // App password
 
@@ -27,6 +32,7 @@ public class AuthManager {
         this.auth = FirebaseAuth.getInstance();
         this.db = FirebaseFirestore.getInstance();
         this.context = context;
+        this.mAuth = FirebaseAuth.getInstance();
     }
 
     // ✅ Register User with OTP
@@ -170,5 +176,21 @@ public class AuthManager {
     public interface AuthCallback {
         void onSuccess(String message);
         void onFailure(String errorMessage);
+    }
+
+    public void logoutUser() {
+        if (mAuth != null) {
+            mAuth.signOut();
+        }
+        Toast.makeText(context, "Logout Successfully", Toast.LENGTH_SHORT).show();
+
+        // Ensure context is an activity before starting an Intent
+        if (context instanceof AppCompatActivity) {
+            Intent intent = new Intent(context, Login.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            context.startActivity(intent);
+        } else {
+            Log.e("AuthManager", "Context is not an instance of AppCompatActivity");
+        }
     }
 }
