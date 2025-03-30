@@ -8,6 +8,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import android.app.ProgressDialog;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -58,7 +59,15 @@ public class RegisterPassword extends AppCompatActivity {
         FirebaseUser user = auth.getCurrentUser();
 
         if (user != null) {
+            // Show ProgressDialog
+            ProgressDialog progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("Updating password...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+
             user.updatePassword(newPassword).addOnCompleteListener(task -> {
+                progressDialog.dismiss(); // Dismiss ProgressDialog
+
                 if (task.isSuccessful()) {
                     Toast.makeText(RegisterPassword.this, "User Created Successfully.", Toast.LENGTH_SHORT).show();
 
@@ -74,4 +83,5 @@ public class RegisterPassword extends AppCompatActivity {
             Toast.makeText(this, "User not found. Please sign in again.", Toast.LENGTH_SHORT).show();
         }
     }
+
 }

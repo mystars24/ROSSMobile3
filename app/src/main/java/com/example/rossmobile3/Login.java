@@ -45,9 +45,28 @@ public class Login extends AppCompatActivity {
                 @Override
                 public void onSuccess(String message) {
                     Toast.makeText(Login.this, message, Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(Login.this, UserMainDashboard.class);
-                    startActivity(intent);
-                    finish(); // Close login activity
+
+                    // Check if the user has a device
+                    authManager.checkUserDevice(email, new AuthManager.DeviceCheckCallback() {
+                        @Override
+                        public void onDeviceFound() {
+                            Intent intent = new Intent(Login.this, UserMainDashboard.class);
+                            startActivity(intent);
+                            finish();
+                        }
+
+                        @Override
+                        public void onDeviceNotFound() {
+                            Intent intent = new Intent(Login.this, AddDevice.class);
+                            startActivity(intent);
+                            finish();
+                        }
+
+                        @Override
+                        public void onError(String errorMessage) {
+                            Toast.makeText(Login.this, errorMessage, Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
 
                 @Override
@@ -55,8 +74,9 @@ public class Login extends AppCompatActivity {
                     Toast.makeText(Login.this, errorMessage, Toast.LENGTH_SHORT).show();
                 }
             });
-
         });
+
+
         register.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

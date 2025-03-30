@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import android.app.ProgressDialog;
 
 public class Register extends AppCompatActivity {
 
@@ -37,9 +38,16 @@ public class Register extends AppCompatActivity {
                 return;
             }
 
+            // Show ProgressDialog while registering
+            ProgressDialog progressDialog = new ProgressDialog(Register.this);
+            progressDialog.setMessage("Registering...");
+            progressDialog.setCancelable(false); // Prevent dismissing by tapping outside
+            progressDialog.show();
+
             authManager.registerUser(email, new AuthManager.AuthCallback() {
                 @Override
-                public void onSuccess(String otp) {  // ✅ Corrected! Now it matches AuthCallback
+                public void onSuccess(String otp) {
+                    progressDialog.dismiss(); // Dismiss when done
                     Intent intent = new Intent(Register.this, RegisterOTP.class);
                     intent.putExtra("email", email);
                     intent.putExtra("otp", otp); // Pass OTP if needed
@@ -48,10 +56,12 @@ public class Register extends AppCompatActivity {
 
                 @Override
                 public void onFailure(String error) {
+                    progressDialog.dismiss(); // Dismiss on failure
                     Toast.makeText(Register.this, error, Toast.LENGTH_SHORT).show();
                 }
             });
         });
+
 
         login.setOnClickListener(v -> {
             Intent intent = new Intent(Register.this, Login.class);

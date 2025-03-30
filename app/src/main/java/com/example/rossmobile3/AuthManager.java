@@ -10,13 +10,21 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import android.app.ProgressDialog;
 
 import javax.mail.MessagingException;
 
@@ -27,6 +35,7 @@ public class AuthManager {
     private FirebaseAuth mAuth;
     private static final String SENDER_EMAIL = "rosstars2425@gmail.com";  // Your email
     private static final String SENDER_PASSWORD = "sfwh wvlr evnj jjii";  // App password
+
 
     public AuthManager(Context context) {
         this.auth = FirebaseAuth.getInstance();
@@ -72,8 +81,26 @@ public class AuthManager {
 
     // ✅ Login User
     public void loginUser(String email, String password, AuthCallback callback) {
+        if (email.isEmpty() || password.isEmpty()) {
+            callback.onFailure("Email and password cannot be empty.");
+            return;
+        }
+
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            callback.onFailure("Invalid email format.");
+            return;
+        }
+
+        // Show loading dialog
+        ProgressDialog progressDialog = new ProgressDialog(context);
+        progressDialog.setMessage("Logging in...");
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
+                    progressDialog.dismiss(); // Hide loading dialog
+
                     if (task.isSuccessful()) {
                         FirebaseUser user = auth.getCurrentUser();
                         if (user != null) {
@@ -87,6 +114,89 @@ public class AuthManager {
                 });
     }
 
+    public void checkUserDevice(String email, DeviceCheckCallback callback) {
+        db.collection("users")
+                .whereEqualTo("email", email)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        boolean hasDevice = false;
+
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            if (document.contains("device")) { // Check if device exists
+                                hasDevice = true;
+                                break;
+                            }
+                        }
+
+                        if (hasDevice) {
+                            callback.onDeviceFound();
+                        } else {
+                            callback.onDeviceNotFound();
+                        }
+                    } else {
+                        callback.onDeviceNotFound();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    callback.onError("Failed to check device: " + e.getMessage());
+                });
+    }
+
+    public interface DeviceCheckCallback {
+        void onDeviceFound();
+        void onDeviceNotFound();
+        void onError(String errorMessage);
+    }
+
+//    Add Device Method
+    public void addDevice(String deviceID, AuthCallback callback) {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) {
+            callback.onFailure("User not authenticated.");
+            return;
+        }
+
+        String userEmail = user.getEmail();
+        DatabaseReference deviceRef = FirebaseDatabase.getInstance().getReference().child(deviceID);
+
+        deviceRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.exists() && snapshot.hasChild("user")) {
+                    String currentUser = snapshot.child("user").getValue(String.class);
+
+                    if (currentUser == null || currentUser.isEmpty()) {
+                        // Update Realtime Database
+                        deviceRef.child("user").setValue(userEmail)
+                                .addOnSuccessListener(aVoid -> {
+                                    // Update Firestore
+                                    Map<String, Object> deviceData = new HashMap<>();
+                                    deviceData.put("email", userEmail);
+                                    deviceData.put("device", deviceID);
+
+                                    db.collection("users").document(user.getUid())
+                                            .set(deviceData)
+                                            .addOnSuccessListener(aVoid1 -> callback.onSuccess("Device added successfully!"))
+                                            .addOnFailureListener(e -> callback.onFailure("Failed to update Firestore: " + e.getMessage()));
+                                })
+                                .addOnFailureListener(e -> callback.onFailure("Failed to update Realtime Database: " + e.getMessage()));
+                    } else {
+                        callback.onFailure("Device is already registered to another user.");
+                    }
+                } else {
+                    callback.onFailure("Device ID does not exist in the system.");
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                callback.onFailure("Error: " + error.getMessage());
+            }
+        });
+    }
+
+
     private void saveOTPToFirebase(String email, String otp) {
         Map<String, Object> otpData = new HashMap<>();
         otpData.put("otp", otp);
@@ -98,9 +208,10 @@ public class AuthManager {
                 .addOnFailureListener(e -> {});
     }
 
+//    OTP Generator
     private String generateOTP() {
         Random random = new Random();
-        return String.valueOf(100000 + random.nextInt(999999)); // Generate 6-digit OTP
+        return String.valueOf(100000 + random.nextInt(900000)); // Generates exactly 6 digits
     }
 
     public void sendOTPEmail(String recipientEmail, String otp, AuthCallback callback) {
