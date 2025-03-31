@@ -1,6 +1,7 @@
 package com.example.rossmobile3.fragments;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,6 +30,12 @@ public class UserDevices extends Fragment {
     private FirebaseAuth auth;
     private DatabaseReference realtimeDb;
     private View view;
+    private Handler handler = new Handler();
+    private Runnable refreshRunnable, checkStatusRunnable;
+    private long lastUpdateTime = 0;
+    private static final long INACTIVITY_THRESHOLD = 10000; // 10 seconds
+    private String lastDeviceStatus = "";
+    private TextView deviceStatusText;
 
     @Nullable
     @Override
@@ -40,49 +47,53 @@ public class UserDevices extends Fragment {
         auth = FirebaseAuth.getInstance();
         realtimeDb = FirebaseDatabase.getInstance().getReference("bin"); // Root path for devices
 
-        loadUserDevices(); // Fetch devices when view is created
+        loadUserDevices(); // Initial fetch
+        startAutoRefresh();
 
         return view;
     }
 
+    private void startAutoRefresh() {
+        refreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+                loadUserDevices();
+                handler.postDelayed(this, 2000); // Refresh every 2 seconds
+            }
+        };
+        handler.post(refreshRunnable);
+    }
+
+    private void resetInactiveTimer() {
+        handler.removeCallbacks(checkStatusRunnable);
+        handler.postDelayed(checkStatusRunnable, INACTIVITY_THRESHOLD);
+    }
+
     private void loadUserDevices() {
         String userEmail = auth.getCurrentUser() != null ? auth.getCurrentUser().getEmail() : null;
-        Log.d("UserDevices", "User Email: " + userEmail);
-
         if (userEmail == null) {
             Log.e("UserDevices", "No logged-in user.");
             return;
         }
 
-        Log.d("UserDevices", "Fetching user devices for: " + userEmail);
-
         db.collection("users").whereEqualTo("email", userEmail)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && !task.getResult().isEmpty()) {
-                        Log.d("UserDevices", "User found: " + task.getResult().getDocuments().size());
-
                         for (QueryDocumentSnapshot document : task.getResult()) {
                             if (document.contains("device")) {
                                 String deviceId = document.getString("device");
-                                Log.d("UserDevices", "Device ID: " + deviceId);
                                 if (deviceId != null) {
                                     fetchDeviceStatus(deviceId);
                                 }
-                            } else {
-                                Log.e("UserDevices", "No device associated with this user.");
                             }
                         }
-                    } else {
-                        Log.e("UserDevices", "No user found in Firestore", task.getException());
                     }
                 });
     }
 
     private void fetchDeviceStatus(String deviceId) {
-        Log.d("UserDevices", "Fetching status for device: " + deviceId);
-
-        realtimeDb.child(deviceId).addListenerForSingleValueEvent(new ValueEventListener() {
+        realtimeDb.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
@@ -90,12 +101,10 @@ public class UserDevices extends Fragment {
                     String fillLevel = snapshot.child("fillLevel").getValue() != null ?
                             snapshot.child("fillLevel").getValue().toString() : "N/A";
 
-                    Log.d("UserDevices", "Device " + deviceId + " status: " + deviceStatus);
-                    Log.d("UserDevices", "Device " + deviceId + " fill level: " + fillLevel);
-
-                    addDeviceView(deviceId, deviceStatus, fillLevel);
-                } else {
-                    Log.w("UserDevices", "Device " + deviceId + " not found in Realtime DB");
+                    lastUpdateTime = System.currentTimeMillis(); // Update last received time
+                    lastDeviceStatus = deviceStatus;
+                    updateDeviceView(deviceStatus, fillLevel);
+                    resetInactiveTimer();
                 }
             }
 
@@ -106,20 +115,44 @@ public class UserDevices extends Fragment {
         });
     }
 
-    private void addDeviceView(String deviceId, String deviceStatus, String fillLevel) {
-        View deviceView = LayoutInflater.from(getContext()).inflate(R.layout.device_item, deviceContainer, false);
+    private void updateDeviceView(String deviceStatus, String fillLevel) {
+        if (deviceContainer.getChildCount() == 0) {
+            View deviceView = LayoutInflater.from(getContext()).inflate(R.layout.device_item, deviceContainer, false);
+            deviceContainer.addView(deviceView);
+            deviceStatusText = deviceView.findViewById(R.id.deviceStatus);
+        } else {
+            View deviceView = deviceContainer.getChildAt(0);
+            deviceStatusText = deviceView.findViewById(R.id.deviceStatus);
+        }
 
-        TextView deviceIdText = deviceView.findViewById(R.id.deviceId);
-        TextView deviceStatusText = deviceView.findViewById(R.id.deviceStatus);
-//        TextView fillLevelText = deviceView.findViewById(R.id.fillLevel); // Make sure your layout has this TextView
-
-        deviceIdText.setText("Device: " + deviceId);
+        TextView deviceIdText = deviceContainer.getChildAt(0).findViewById(R.id.deviceId);
+        deviceIdText.setText("Device: Bin");
         deviceStatusText.setText("Status: " + deviceStatus);
-//        fillLevelText.setText("Fill Level: " + fillLevel);
+    }
 
-        deviceContainer.addView(deviceView);
+    private void sendInactiveStatusToDatabase() {
+        realtimeDb.child("deviceStatus").setValue("Inactive")
+                .addOnSuccessListener(aVoid -> Log.d("UserDevices", "Device status set to Inactive"))
+                .addOnFailureListener(e -> Log.e("UserDevices", "Failed to update device status", e));
+    }
 
-        Log.d("UserDevices", "Device view added: " + deviceId);
-        Log.d("UserDevices", "Total Views: " + deviceContainer.getChildCount());
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        handler.removeCallbacks(refreshRunnable);
+        handler.removeCallbacks(checkStatusRunnable);
+    }
+
+    {
+        checkStatusRunnable = new Runnable() {
+            @Override
+            public void run() {
+                lastDeviceStatus = "Inactive";
+                if (deviceStatusText != null) {
+                    deviceStatusText.setText("Status: Inactive");
+                }
+                sendInactiveStatusToDatabase();
+            }
+        };
     }
 }
