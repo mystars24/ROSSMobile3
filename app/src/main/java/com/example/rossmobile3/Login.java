@@ -45,7 +45,6 @@ public class Login extends AppCompatActivity {
                 @Override
                 public void onSuccess(String message) {
                     Toast.makeText(Login.this, message, Toast.LENGTH_SHORT).show();
-
                     // Check if the user has a device
                     authManager.checkUserDevice(email, new AuthManager.DeviceCheckCallback() {
                         @Override
@@ -54,21 +53,18 @@ public class Login extends AppCompatActivity {
                             startActivity(intent);
                             finish();
                         }
-
                         @Override
                         public void onDeviceNotFound() {
                             Intent intent = new Intent(Login.this, AddDevice.class);
                             startActivity(intent);
                             finish();
                         }
-
                         @Override
                         public void onError(String errorMessage) {
                             Toast.makeText(Login.this, errorMessage, Toast.LENGTH_SHORT).show();
                         }
                     });
                 }
-
                 @Override
                 public void onFailure(String errorMessage) {
                     Toast.makeText(Login.this, errorMessage, Toast.LENGTH_SHORT).show();

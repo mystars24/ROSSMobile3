@@ -46,7 +46,13 @@ public class UserDevices extends Fragment {
     }
 
     private void loadUserDevices() {
-        String userEmail = auth.getCurrentUser().getEmail();
+        String userEmail = auth.getCurrentUser() != null ? auth.getCurrentUser().getEmail() : null;
+        Log.d("UserDevices", "User Email: " + userEmail);
+
+        if (userEmail == null) {
+            Log.e("UserDevices", "No logged-in user.");
+            return;
+        }
 
         Log.d("UserDevices", "Fetching user devices for: " + userEmail);
 
@@ -54,42 +60,40 @@ public class UserDevices extends Fragment {
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && !task.getResult().isEmpty()) {
+                        Log.d("UserDevices", "User found: " + task.getResult().getDocuments().size());
+
                         for (QueryDocumentSnapshot document : task.getResult()) {
-                            Log.d("UserDevices", "User found: " + document.getId());
-
-                            document.getReference().collection("devices").get()
-                                    .addOnCompleteListener(deviceTask -> {
-                                        if (deviceTask.isSuccessful() && deviceTask.getResult() != null) {
-                                            for (QueryDocumentSnapshot deviceDoc : deviceTask.getResult()) {
-                                                String deviceId = deviceDoc.getString("device");
-                                                Log.d("UserDevices", "Device found: " + deviceId);
-
-                                                if (deviceId != null) {
-                                                    fetchDeviceStatus(deviceId);
-                                                }
-                                            }
-                                        } else {
-                                            Log.e("UserDevices", "Error fetching user devices", deviceTask.getException());
-                                        }
-                                    });
+                            if (document.contains("device")) {
+                                String deviceId = document.getString("device");
+                                Log.d("UserDevices", "Device ID: " + deviceId);
+                                if (deviceId != null) {
+                                    fetchDeviceStatus(deviceId);
+                                }
+                            } else {
+                                Log.e("UserDevices", "No device associated with this user.");
+                            }
                         }
                     } else {
-                        Log.e("UserDevices", "User not found", task.getException());
+                        Log.e("UserDevices", "No user found in Firestore", task.getException());
                     }
                 });
     }
 
-
     private void fetchDeviceStatus(String deviceId) {
         Log.d("UserDevices", "Fetching status for device: " + deviceId);
 
-        realtimeDb.child(deviceId).child("deviceStatus").addListenerForSingleValueEvent(new ValueEventListener() {
+        realtimeDb.child(deviceId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    String deviceStatus = snapshot.getValue(String.class);
+                    String deviceStatus = snapshot.child("deviceStatus").getValue(String.class);
+                    String fillLevel = snapshot.child("fillLevel").getValue() != null ?
+                            snapshot.child("fillLevel").getValue().toString() : "N/A";
+
                     Log.d("UserDevices", "Device " + deviceId + " status: " + deviceStatus);
-                    addDeviceView(deviceId, deviceStatus);
+                    Log.d("UserDevices", "Device " + deviceId + " fill level: " + fillLevel);
+
+                    addDeviceView(deviceId, deviceStatus, fillLevel);
                 } else {
                     Log.w("UserDevices", "Device " + deviceId + " not found in Realtime DB");
                 }
@@ -102,16 +106,20 @@ public class UserDevices extends Fragment {
         });
     }
 
-
-    private void addDeviceView(String deviceId, String deviceStatus) {
+    private void addDeviceView(String deviceId, String deviceStatus, String fillLevel) {
         View deviceView = LayoutInflater.from(getContext()).inflate(R.layout.device_item, deviceContainer, false);
 
         TextView deviceIdText = deviceView.findViewById(R.id.deviceId);
         TextView deviceStatusText = deviceView.findViewById(R.id.deviceStatus);
+//        TextView fillLevelText = deviceView.findViewById(R.id.fillLevel); // Make sure your layout has this TextView
 
         deviceIdText.setText("Device: " + deviceId);
         deviceStatusText.setText("Status: " + deviceStatus);
+//        fillLevelText.setText("Fill Level: " + fillLevel);
 
-        deviceContainer.addView(deviceView); // Dynamically add device to list
+        deviceContainer.addView(deviceView);
+
+        Log.d("UserDevices", "Device view added: " + deviceId);
+        Log.d("UserDevices", "Total Views: " + deviceContainer.getChildCount());
     }
 }
