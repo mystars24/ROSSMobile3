@@ -81,7 +81,7 @@
         android:ems="10"
         android:inputType="text"
         android:hint="DeviceID"
-        android:textColorHint="@color/hinttext"
+        android:textColor="@color/white"
         app:layout_constraintBottom_toBottomOf="@+id/imageView7"
         app:layout_constraintEnd_toEndOf="@+id/imageView7"
         app:layout_constraintHorizontal_bias="0.52"

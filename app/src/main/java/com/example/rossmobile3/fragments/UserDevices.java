@@ -1,5 +1,6 @@
 package com.example.rossmobile3.fragments;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,6 +25,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import java.util.Map;
+import java.util.HashMap;
+
 public class UserDevices extends Fragment {
 
     private LinearLayout deviceContainer;
@@ -33,9 +38,12 @@ public class UserDevices extends Fragment {
     private Handler handler = new Handler();
     private Runnable refreshRunnable, checkStatusRunnable;
     private long lastUpdateTime = 0;
+    private String currentDeviceId;
     private static final long INACTIVITY_THRESHOLD = 10000; // 10 seconds
     private String lastDeviceStatus = "";
     private TextView deviceStatusText;
+    private Map<String, Long> deviceLastUpdateTimes = new HashMap<>(); // Track multiple devices
+    private Map<String, View> deviceViews = new HashMap<>(); // Track device views
 
     @Nullable
     @Override
@@ -43,9 +51,10 @@ public class UserDevices extends Fragment {
         view = inflater.inflate(R.layout.fragment_user_devices, container, false);
 
         deviceContainer = view.findViewById(R.id.deviceContainer);
+        deviceStatusText = view.findViewById(R.id.deviceStatus);
         db = FirebaseFirestore.getInstance();
         auth = FirebaseAuth.getInstance();
-        realtimeDb = FirebaseDatabase.getInstance().getReference("bin"); // Root path for devices
+        realtimeDb = FirebaseDatabase.getInstance().getReference("device"); // Updated root path
 
         loadUserDevices(); // Initial fetch
         startAutoRefresh();
@@ -93,17 +102,15 @@ public class UserDevices extends Fragment {
     }
 
     private void fetchDeviceStatus(String deviceId) {
-        realtimeDb.addListenerForSingleValueEvent(new ValueEventListener() {
+        DatabaseReference deviceRef = realtimeDb.child(deviceId);
+
+        deviceRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
                     String deviceStatus = snapshot.child("deviceStatus").getValue(String.class);
-                    String fillLevel = snapshot.child("fillLevel").getValue() != null ?
-                            snapshot.child("fillLevel").getValue().toString() : "N/A";
-
-                    lastUpdateTime = System.currentTimeMillis(); // Update last received time
-                    lastDeviceStatus = deviceStatus;
-                    updateDeviceView(deviceStatus, fillLevel);
+                    deviceLastUpdateTimes.put(deviceId, System.currentTimeMillis());
+                    updateDeviceView(deviceId, deviceStatus);
                     resetInactiveTimer();
                 }
             }
@@ -114,26 +121,59 @@ public class UserDevices extends Fragment {
             }
         });
     }
+    {
+        checkStatusRunnable = new Runnable() {
+            @Override
+            public void run() {
+                long currentTime = System.currentTimeMillis();
+                for (Map.Entry<String, Long> entry : deviceLastUpdateTimes.entrySet()) {
+                    String deviceId = entry.getKey();
+                    long lastUpdate = entry.getValue();
 
-    private void updateDeviceView(String deviceStatus, String fillLevel) {
-        if (deviceContainer.getChildCount() == 0) {
-            View deviceView = LayoutInflater.from(getContext()).inflate(R.layout.device_item, deviceContainer, false);
-            deviceContainer.addView(deviceView);
-            deviceStatusText = deviceView.findViewById(R.id.deviceStatus);
-        } else {
-            View deviceView = deviceContainer.getChildAt(0);
-            deviceStatusText = deviceView.findViewById(R.id.deviceStatus);
-        }
-
-        TextView deviceIdText = deviceContainer.getChildAt(0).findViewById(R.id.deviceId);
-        deviceIdText.setText("Device: Bin");
-        deviceStatusText.setText("Status: " + deviceStatus);
+                    if (currentTime - lastUpdate > INACTIVITY_THRESHOLD) {
+                        markDeviceAsInactive(deviceId);
+                    }
+                }
+                handler.postDelayed(this, 1000); // Check every second
+            }
+        };
+    }
+    private void markDeviceAsInactive(String deviceId) {
+        // Update Firebase
+        realtimeDb.child(deviceId).child("deviceStatus").setValue("Inactive")
+                .addOnSuccessListener(aVoid -> {
+                    Log.d("UserDevices", deviceId + " marked inactive in Firebase");
+                    updateDeviceView(deviceId, "Inactive");
+                })
+                .addOnFailureListener(e -> Log.e("UserDevices", "Failed to mark device inactive", e));
     }
 
-    private void sendInactiveStatusToDatabase() {
-        realtimeDb.child("deviceStatus").setValue("Inactive")
-                .addOnSuccessListener(aVoid -> Log.d("UserDevices", "Device status set to Inactive"))
-                .addOnFailureListener(e -> Log.e("UserDevices", "Failed to update device status", e));
+    private void updateDeviceView(String deviceId, String deviceStatus) {
+        View deviceView = deviceViews.get(deviceId);
+
+        if (deviceView == null) {
+            // Create new view if doesn't exist
+            deviceView = LayoutInflater.from(getContext()).inflate(R.layout.device_item, deviceContainer, false);
+            TextView deviceIdText = deviceView.findViewById(R.id.deviceId);
+            TextView statusText = deviceView.findViewById(R.id.deviceStatus);
+
+            deviceIdText.setText("Device: " + deviceId);
+            statusText.setText("Status: " + deviceStatus);
+
+            deviceContainer.addView(deviceView);
+            deviceViews.put(deviceId, deviceView);
+        } else {
+            // Update existing view
+            TextView statusText = deviceView.findViewById(R.id.deviceStatus);
+            statusText.setText("Status: " + deviceStatus);
+
+            // Optional: Change color for inactive status
+            if ("Inactive".equals(deviceStatus)) {
+                statusText.setTextColor(Color.RED);
+            } else {
+                statusText.setTextColor(Color.BLACK); // Or your default color
+            }
+        }
     }
 
     @Override
@@ -141,6 +181,8 @@ public class UserDevices extends Fragment {
         super.onDestroyView();
         handler.removeCallbacks(refreshRunnable);
         handler.removeCallbacks(checkStatusRunnable);
+        deviceLastUpdateTimes.clear();
+        deviceViews.clear();
     }
 
     {
@@ -151,7 +193,6 @@ public class UserDevices extends Fragment {
                 if (deviceStatusText != null) {
                     deviceStatusText.setText("Status: Inactive");
                 }
-                sendInactiveStatusToDatabase();
             }
         };
     }

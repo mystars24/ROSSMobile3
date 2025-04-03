@@ -149,7 +149,7 @@ public class AuthManager {
         void onError(String errorMessage);
     }
 
-//    Add Device Method
+    //    Add Device Method
     public void addDevice(String deviceID, AuthCallback callback) {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user == null) {
@@ -158,32 +158,46 @@ public class AuthManager {
         }
 
         String userEmail = user.getEmail();
-        DatabaseReference deviceRef = FirebaseDatabase.getInstance().getReference().child(deviceID);
+        DatabaseReference deviceRef = FirebaseDatabase.getInstance().getReference().child("device").child(deviceID);
+        Log.d("Firebase", "Checking device path: " + deviceRef.toString());
 
         deviceRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                if (snapshot.exists() && snapshot.hasChild("user")) {
-                    String currentUser = snapshot.child("user").getValue(String.class);
+                if (snapshot.exists()) {
+                    DatabaseReference userRef = deviceRef.child("user");
 
-                    if (currentUser == null || currentUser.isEmpty()) {
-                        // Update Realtime Database
-                        deviceRef.child("user").setValue(userEmail)
-                                .addOnSuccessListener(aVoid -> {
-                                    // Update Firestore
-                                    Map<String, Object> deviceData = new HashMap<>();
-                                    deviceData.put("email", userEmail);
-                                    deviceData.put("device", deviceID);
+                    userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot userSnapshot) {
+                            String currentUser = userSnapshot.getValue(String.class);
 
-                                    db.collection("users").document(user.getUid())
-                                            .set(deviceData)
-                                            .addOnSuccessListener(aVoid1 -> callback.onSuccess("Device added successfully!"))
-                                            .addOnFailureListener(e -> callback.onFailure("Failed to update Firestore: " + e.getMessage()));
-                                })
-                                .addOnFailureListener(e -> callback.onFailure("Failed to update Realtime Database: " + e.getMessage()));
-                    } else {
-                        callback.onFailure("Device is already registered to another user.");
-                    }
+                            if (currentUser == null || currentUser.isEmpty()) {
+                                // Update Realtime Database
+                                userRef.setValue(userEmail)
+                                        .addOnSuccessListener(aVoid -> {
+                                            // Update Firestore
+                                            Map<String, Object> deviceData = new HashMap<>();
+                                            deviceData.put("email", userEmail);
+                                            deviceData.put("device", deviceID); // Store device ID
+
+                                            db.collection("users").document(user.getUid())
+                                                    .set(deviceData)
+                                                    .addOnSuccessListener(aVoid1 -> callback.onSuccess("Device added successfully!"))
+                                                    .addOnFailureListener(e -> callback.onFailure("Failed to update Firestore: " + e.getMessage()));
+                                        })
+                                        .addOnFailureListener(e -> callback.onFailure("Failed to update Realtime Database: " + e.getMessage()));
+                            } else {
+                                callback.onFailure("Device is already registered to another user.");
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError error) {
+                            callback.onFailure("Error: " + error.getMessage());
+                        }
+                    });
+
                 } else {
                     callback.onFailure("Device ID does not exist in the system.");
                 }
@@ -197,6 +211,7 @@ public class AuthManager {
     }
 
 
+
     private void saveOTPToFirebase(String email, String otp) {
         Map<String, Object> otpData = new HashMap<>();
         otpData.put("otp", otp);
@@ -208,7 +223,7 @@ public class AuthManager {
                 .addOnFailureListener(e -> {});
     }
 
-//    OTP Generator
+    //    OTP Generator
     private String generateOTP() {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // Generates exactly 6 digits
