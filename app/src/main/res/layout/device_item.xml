@@ -18,7 +18,7 @@
         android:id="@+id/deviceStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Status: "
+        android:text="Tap to View"
         android:textColor="@android:color/white"
         android:textSize="18sp" />
 
