@@ -304,6 +304,60 @@ public class AuthManager {
         void onFailure(String errorMessage);
     }
 
+    // ✅ Retrieve user profile info
+    public void getProfileInfo(ProfileCallback callback) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            callback.onFailure("User not logged in.");
+            return;
+        }
+
+        String userId = user.getUid();
+        String email = user.getEmail();
+
+        db.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String name = documentSnapshot.getString("name");
+                        callback.onSuccess(email, name);
+                    } else {
+                        callback.onFailure("User profile not found.");
+                    }
+                })
+                .addOnFailureListener(e -> callback.onFailure("Error fetching profile: " + e.getMessage()));
+    }
+
+    // ✅ Update user profile info (only name)
+    public void updateProfileInfo(String newName, AuthCallback callback) {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            callback.onFailure("User not logged in.");
+            return;
+        }
+
+        String userId = user.getUid();
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("name", newName);
+
+        db.collection("users").document(userId)
+                .update(updateData)
+                .addOnSuccessListener(aVoid -> callback.onSuccess("Profile updated successfully."))
+                .addOnFailureListener(e -> callback.onFailure("Failed to update profile: " + e.getMessage()));
+    }
+
+    // ✅ Callback interface for profile operations
+//    public interface ProfileCallback {
+//        void onSuccess(String email, String name);
+//        void onFailure(String errorMessage);
+//    }
+
+
+    public interface ProfileCallback {
+        void onSuccess(String email, String name);
+        void onFailure(String errorMessage);
+    }
+
     public void logoutUser() {
         if (mAuth != null) {
             mAuth.signOut();

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -11,7 +12,8 @@ import androidx.appcompat.app.AppCompatActivity;
 public class AddDevice extends AppCompatActivity {
 
     private EditText addDeviceID;
-    private Button addBtn;
+    private Button addBtn, logoutBtn;
+    private ImageView settingsBtn;
     private AuthManager authManager;
 
     @Override
@@ -22,6 +24,7 @@ public class AddDevice extends AppCompatActivity {
         addDeviceID = findViewById(R.id.addDeviceID);
         addBtn = findViewById(R.id.addBtn);
         authManager = new AuthManager(this);
+        settingsBtn = findViewById(R.id.settingsBtn);
 
         addBtn.setOnClickListener(v -> {
             String deviceID = addDeviceID.getText().toString().trim();
@@ -45,5 +48,14 @@ public class AddDevice extends AppCompatActivity {
                 }
             });
         });
+
+        settingsBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(AddDevice.this, ProfileInfo.class);
+            startActivity(intent);
+        });
+
+        logoutBtn = findViewById(R.id.logoutBtn);
+        logoutBtn.setOnClickListener(view -> authManager.logoutUser());
+
     }
 }
